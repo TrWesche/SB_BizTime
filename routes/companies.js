@@ -19,7 +19,7 @@ router.get("/:code", async(req, res, next) => {
         const { code } = req.params;
         const result = await db.query(`
             SELECT * FROM companies 
-            INNER JOIN invoices
+            LEFT JOIN invoices
             ON companies.code = invoices.comp_code
             WHERE code = $1`, [code])
         if (result.rows.length === 0) {
