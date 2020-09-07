@@ -17,11 +17,32 @@ router.get("/", async (req, res, next) => {
 router.get("/:code", async(req, res, next) => {
     try {
         const { code } = req.params;
-        const result = await db.query(`SELECT * FROM companies WHERE code = $1`, [code])
+        const result = await db.query(`
+            SELECT * FROM companies 
+            INNER JOIN invoices
+            ON companies.code = invoices.comp_code
+            WHERE code = $1`, [code])
         if (result.rows.length === 0) {
             throw new ExpressError(`Unable to locate record for company with code ${code}`, 404)
         }
-        return res.json({company: result.rows[0]})
+        const { name, description } = result.rows[0];
+        const invoices = result.rows.map( row => {
+                const invoice = {
+                id: row.id,
+                amt: row.amt,
+                paid: row.paid,
+                add_date: row.add_date,
+                paid_date: row.paid_date};
+
+                return invoice;
+            })
+        return res.json({company: {
+            code: code,
+            name: name,
+            description: description,
+            invoices: invoices
+        }});
+        // return res.json({company: result})
     } catch (error) {
         return next(error)
     }
